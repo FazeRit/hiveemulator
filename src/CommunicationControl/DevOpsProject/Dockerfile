@@ -1,4 +1,5 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+
 WORKDIR /app
 
 RUN groupadd --gid 1000 appuser && \  
