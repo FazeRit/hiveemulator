@@ -13,6 +13,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+
+      - name: Publish Communication Control
+        run: |
+          dotnet publish ./src/CommunicationControl/DevOpsProject/DevOpsProject.CommunicationControl.API.csproj \
+          -c Release \
+          -o ./src/CommunicationControl/DevOpsProject/published
+
+      - name: Publish Hive Mind
+        run: |
+          dotnet publish ./src/CommunicationControl/DevOpsProject.HiveMind.API/DevOpsProject.HiveMind.API.csproj \
+          -c Release \
+          -o ./src/CommunicationControl/DevOpsProject.HiveMind.API/published
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -29,10 +46,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.ref_name }}
         run: |
-          docker build -t $ECR_REGISTRY/communication-control:$IMAGE_TAG -f ./src/CommunicationControl/DevOpsProject/Dockerfile ./src
+          docker build -t $ECR_REGISTRY/communication-control:$IMAGE_TAG -f ./src/CommunicationControl/DevOpsProject/Dockerfile ./src/CommunicationControl/DevOpsProject
           docker push $ECR_REGISTRY/communication-control:$IMAGE_TAG
           
-          docker build -t $ECR_REGISTRY/hive-mind:$IMAGE_TAG -f ./src/CommunicationControl/DevOpsProject.HiveMind.API/Dockerfile ./src
+          docker build -t $ECR_REGISTRY/hive-mind:$IMAGE_TAG -f ./src/CommunicationControl/DevOpsProject.HiveMind.API/Dockerfile ./src/CommunicationControl/DevOpsProject.HiveMind.API
           docker push $ECR_REGISTRY/hive-mind:$IMAGE_TAG
           
           docker build -t $ECR_REGISTRY/web:$IMAGE_TAG ./src/MapClient
