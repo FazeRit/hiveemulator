@@ -34,9 +34,11 @@ services:
     restart: always
     environment:
       - ConnectionStrings__Redis=redis:6379,abortConnect=false
+      - Redis__ConnectionString=redis:6379,abortConnect=false
       - Redis__Host=redis
       - Redis__Port=6379
       - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
     networks:
       - hive-emulator-main
     ports:
