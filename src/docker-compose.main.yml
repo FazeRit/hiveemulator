@@ -65,7 +65,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./config.json:/usr/share/nginx/html/config.json
+      - ./MapClient/public/config.json:/usr/share/nginx/html/config.json
     networks:
       - hive-emulator-main
 
