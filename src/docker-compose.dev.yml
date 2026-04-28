@@ -33,8 +33,12 @@ services:
     container_name: communication-control-dev
     restart: always
     environment:
-      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__Redis=redis:6379,abortConnect=false
+      - Redis__ConnectionString=redis:6379,abortConnect=false
+      - Redis__Host=redis
+      - Redis__Port=6379
       - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
     networks:
       - hive-emulator-dev
     ports:
@@ -52,16 +56,19 @@ services:
     networks:
       - hive-emulator-dev
     depends_on:
-      - redis
-      - communication-control
+      redis:
+        condition: service_healthy
+      communication-control:
+        condition: service_started
 
   web:
     image: 859384797868.dkr.ecr.us-east-1.amazonaws.com/web:dev
     container_name: web-dev
+    restart: always
     ports:
       - "80:80"
     volumes:
-      - ./config.json:/usr/share/nginx/html/config.json
+      - ./MapClient/public/config.json:/usr/share/nginx/html/config.json
     networks:
       - hive-emulator-dev
 

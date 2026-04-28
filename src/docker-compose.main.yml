@@ -33,7 +33,9 @@ services:
     container_name: communication-control-main
     restart: always
     environment:
-      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__Redis=redis:6379,abortConnect=false
+      - Redis__Host=redis
+      - Redis__Port=6379
       - ASPNETCORE_URLS=http://+:8080
     networks:
       - hive-emulator-main
