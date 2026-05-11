@@ -73,4 +73,5 @@ jobs:
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 859384797868.dkr.ecr.us-east-1.amazonaws.com
             docker-compose -f $FILE_NAME pull
             docker-compose -f $FILE_NAME up -d
-            docker image prune -f
+            docker image prune -flear
+            
