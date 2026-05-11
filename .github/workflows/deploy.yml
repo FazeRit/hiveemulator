@@ -64,6 +64,7 @@ jobs:
           source: "src/monitoring/*" 
           target: "~/app/monitoring/"
           strip_components: 2
+          rm: true
 
       - name: SSH and Update EC2
         uses: appleboy/ssh-action@v1.0.3
