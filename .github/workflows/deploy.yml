@@ -18,17 +18,10 @@ jobs:
         with:
           dotnet-version: '8.0'
 
-      - name: Publish Communication Control
+      - name: Publish Services
         run: |
-          dotnet publish ./src/CommunicationControl/DevOpsProject/DevOpsProject.CommunicationControl.API.csproj \
-          -c Release \
-          -o ./src/CommunicationControl/DevOpsProject/published
-
-      - name: Publish Hive Mind
-        run: |
-          dotnet publish ./src/CommunicationControl/DevOpsProject.HiveMind.API/DevOpsProject.HiveMind.API.csproj \
-          -c Release \
-          -o ./src/CommunicationControl/DevOpsProject.HiveMind.API/published
+          dotnet publish ./src/CommunicationControl/DevOpsProject/DevOpsProject.CommunicationControl.API.csproj -c Release -o ./src/CommunicationControl/DevOpsProject/published
+          dotnet publish ./src/CommunicationControl/DevOpsProject.HiveMind.API/DevOpsProject.HiveMind.API.csproj -c Release -o ./src/CommunicationControl/DevOpsProject.HiveMind.API/published
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -59,6 +52,19 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code (needed for SCP)
+        uses: actions/checkout@v4
+
+      - name: Copy monitoring configs to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ github.ref_name == 'main' && secrets.HOST_MAIN || secrets.HOST_DEV }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "src/monitoring/*" 
+          target: "~/app/monitoring/"
+          strip_components: 2
+
       - name: SSH and Update EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -66,12 +72,14 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            mkdir -p ~/app
+            mkdir -p ~/app/monitoring
             cd ~/app
             FILE_NAME="docker-compose.${{ github.ref_name }}.yml"
+            # Завантажуємо свіжий compose файл
             curl -L -o $FILE_NAME https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/src/$FILE_NAME
+            # Логін в ECR на самому сервері
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 859384797868.dkr.ecr.us-east-1.amazonaws.com
+            
             docker-compose -f $FILE_NAME pull
             docker-compose -f $FILE_NAME up -d
-            docker image prune -flear
-            
+            docker image prune -af
