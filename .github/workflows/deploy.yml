@@ -71,13 +71,12 @@ jobs:
           host: ${{ github.ref_name == 'main' && secrets.HOST_MAIN || secrets.HOST_DEV }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          overwrite: true
           script: |
             mkdir -p ~/app/monitoring
             cd ~/app
             FILE_NAME="docker-compose.${{ github.ref_name }}.yml"
-            # Завантажуємо свіжий compose файл
             curl -L -o $FILE_NAME https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/src/$FILE_NAME
-            # Логін в ECR на самому сервері
             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 859384797868.dkr.ecr.us-east-1.amazonaws.com
             
             docker-compose -f $FILE_NAME pull
