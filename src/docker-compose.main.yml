@@ -106,13 +106,28 @@ services:
       networks:
         - hive-emulator-main
   loki:
-      image: grafana/loki:latest
-      container_name: loki-main
-      ports:
-        - "3100:3100"
-      command: -config.file=/etc/loki/local-config.yaml
-      networks:
-        - hive-emulator-main
+    image: grafana/loki:latest
+    container_name: loki-main
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - hive-emulator-main
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - hive-emulator-main
 networks:
   hive-emulator-main:
     driver: bridge
