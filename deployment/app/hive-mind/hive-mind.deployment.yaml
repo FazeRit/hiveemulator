@@ -1,37 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: com-control
+  name: hive-mind
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: com-control
+      app: hive-mind
   template:
     metadata:
       labels:
-        app: com-control
+        app: hive-mind
     spec:
       imagePullSecrets:
         - name: ecr-secret
       containers:
-        - name: com-control
-          image: 859384797868.dkr.ecr.us-east-1.amazonaws.com/communication-control:main
+        - name: hive-mind
+          image: 859384797868.dkr.ecr.us-east-1.amazonaws.com/hive-mind:main
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 5149
           env:
+            - name: CommunicationControl__Url
+              value: "http://com-control:8080"
             - name: ConnectionStrings__Redis
               value: "redis:6379,abortConnect=false"
-            - name: Redis__ConnectionString
-              value: "redis:6379,abortConnect=false"
-            - name: Redis__Host
-              value: "redis"
-            - name: Redis__Port
-              value: "6379"
-            - name: ASPNETCORE_URLS
-              value: "http://+:8080"
             - name: ASPNETCORE_ENVIRONMENT
               value: "Development"
           resources:
@@ -39,5 +33,5 @@ spec:
               cpu: 100m
               memory: 128Mi
             limits:
-              cpu: 300m
+              cpu: 200m
               memory: 256Mi

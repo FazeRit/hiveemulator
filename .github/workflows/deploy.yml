@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Deploy to EKS
 
 on:
   push:
@@ -52,34 +52,30 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code (needed for SCP)
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Copy monitoring configs to Server
-        uses: appleboy/scp-action@master
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ github.ref_name == 'main' && secrets.HOST_MAIN || secrets.HOST_DEV }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "src/monitoring/*" 
-          target: "~/app/monitoring/"
-          strip_components: 2
-          rm: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-      - name: SSH and Update EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ github.ref_name == 'main' && secrets.HOST_MAIN || secrets.HOST_DEV }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          overwrite: true
-          script: |
-            mkdir -p ~/app/monitoring
-            cd ~/app
-            FILE_NAME="docker-compose.${{ github.ref_name }}.yml"
-            curl -L -o $FILE_NAME https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/src/$FILE_NAME
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 859384797868.dkr.ecr.us-east-1.amazonaws.com
-            
-            docker-compose -f $FILE_NAME pull
-            docker-compose -f $FILE_NAME up -d
-            docker image prune -af
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name hutsan-rgr --region us-east-1
+
+      - name: Deploy to EKS
+        run: |
+          IMAGE_TAG=${{ github.ref_name }}
+          REGISTRY=859384797868.dkr.ecr.us-east-1.amazonaws.com
+          
+          sed -i "s|image: .*communication-control:.*|image: $REGISTRY/communication-control:$IMAGE_TAG|g" deployment/app/communication-control/com-control.deployment.yaml
+          sed -i "s|image: .*hive-mind:.*|image: $REGISTRY/hive-mind:$IMAGE_TAG|g" deployment/app/hive-mind/hive-mind.deployment.yaml
+          sed -i "s|image: .*web:.*|image: $REGISTRY/web:$IMAGE_TAG|g" deployment/app/map-client/map-client.deployment.yaml
+          
+          kubectl apply -f deployment/infrastructure/redis/
+          kubectl apply -f deployment/app/map-client/map-client.config.yaml
+          kubectl apply -f deployment/app/
+          kubectl apply -f deployment/infrastructure/ingress/

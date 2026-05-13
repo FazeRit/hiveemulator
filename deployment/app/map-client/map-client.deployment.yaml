@@ -15,9 +15,11 @@ spec:
       labels:
         app: map-client
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: map-client
-          image: registry.gitlab.com/kzotkin/hiveemulator/map-client:latest
+          image: 859384797868.dkr.ecr.us-east-1.amazonaws.com/web:dev
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -36,5 +38,3 @@ spec:
         - name: config-volume
           configMap:
             name: map-client-config
-      imagePullSecrets:
-        - name: gitlab-registry-secret
